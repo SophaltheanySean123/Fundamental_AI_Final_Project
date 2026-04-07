@@ -63,6 +63,13 @@ function requireAuth(req, res, next) {
 }
 
 // ─── Auth Routes ──────────────────────────────────────────────────────────────
+app.get("/debug-env", (req, res) => {
+  res.json({
+    GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+    APP_URL: process.env.APP_URL,
+  });
+});
+
 app.get("/auth/google", (req, res) => {
   const next = req.query.next || "/";
   const url = googleClient.generateAuthUrl({
