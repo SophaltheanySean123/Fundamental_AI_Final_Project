@@ -6,7 +6,10 @@ const FormData = require("form-data");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-mongoose.connect(process.env.MONGODB_URI).then(() => console.log("MongoDB connected"));
+mongoose.connect(process.env.MONGODB_URI, {
+  tls: true,
+  tlsAllowInvalidCertificates: false,
+}).then(() => console.log("MongoDB connected")).catch(err => console.error("MongoDB error:", err.message));
 
 const chunkSchema = new mongoose.Schema({
   text: String,
@@ -111,6 +114,11 @@ async function searchStore(queryEmbedding, topK = 3) {
 
 async function generateAnswer(question, chunks, language = "english") {
   const safeChunks = Array.isArray(chunks) ? chunks : [];
+
+  if (safeChunks.length === 0) {
+    return "No document has been uploaded yet. Please upload a PDF first.";
+  }
+
   const context = safeChunks.map((c) => c.text).join("\n\n");
   const prompt = `Use the context below to answer the question. Reply in ${language}.\n\nContext:\n${context}\n\nQuestion: ${question}`;
 
