@@ -267,7 +267,8 @@
     <!-- Telegram link status -->
     <div id="telegram-linked" class="telegram-linked" style="display:none">
       <i data-lucide="check-circle"></i>
-      Telegram account linked
+      <span style="flex:1">Telegram account linked</span>
+      <button onclick="unlinkTelegram()" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;font-family:Inter,sans-serif;font-weight:600;">Unlink</button>
     </div>
 
     <button class="btn btn-secondary" id="link-telegram-btn" onclick="linkTelegram()">
@@ -342,6 +343,15 @@
       }
     } catch {
       document.getElementById('login-screen').style.display = 'block';
+    }
+  }
+
+  async function unlinkTelegram() {
+    if (!confirm("Unlink your Telegram account?")) return;
+    const res = await fetch('/auth/unlink-telegram', { method: 'POST' });
+    if (res.ok) {
+      document.getElementById('telegram-linked').style.display = 'none';
+      document.getElementById('link-telegram-btn').style.display = 'flex';
     }
   }
 

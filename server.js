@@ -128,6 +128,11 @@ app.get("/auth/me", requireAuth, async (req, res) => {
 });
 
 // ─── Telegram Linking ─────────────────────────────────────────────────────────
+app.post("/auth/unlink-telegram", requireAuth, async (req, res) => {
+  await User.findByIdAndUpdate(req.user._id, { telegramChatId: null });
+  res.json({ success: true });
+});
+
 app.post("/auth/link-telegram/generate", requireAuth, async (req, res) => {
   const crypto = require("crypto");
   const token = crypto.randomBytes(20).toString("hex");
