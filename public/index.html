@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Telegram RAG</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css"/>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -40,50 +38,81 @@
     }
 
     .logo-icon {
-      width: 48px;
-      height: 48px;
+      width: 48px; height: 48px;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 15px rgba(99,102,241,0.4);
     }
 
     .logo-icon svg { color: white; width: 24px; height: 24px; }
-
-    h1 {
-      font-size: 22px;
-      font-weight: 700;
-      color: white;
-    }
+    h1 { font-size: 22px; font-weight: 700; color: white; }
 
     .subtitle {
-      color: #94a3b8;
-      font-size: 14px;
-      margin-bottom: 32px;
-      margin-left: 62px;
+      color: #94a3b8; font-size: 14px;
+      margin-bottom: 32px; margin-left: 62px;
     }
 
+    /* ── Login screen ── */
+    #login-screen { text-align: center; padding: 20px 0; }
+    #login-screen p { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+
+    .google-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: white; color: #1e293b;
+      border: none; border-radius: 12px;
+      padding: 13px 24px; font-size: 15px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .google-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .google-btn svg { width: 20px; height: 20px; }
+
+    /* ── App screen ── */
+    #app-screen { display: none; }
+
+    .user-bar {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 24px;
+    }
+
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .user-info { flex: 1; }
+    .user-name { color: white; font-size: 13px; font-weight: 600; }
+    .user-email { color: #64748b; font-size: 11px; }
+
+    .logout-btn {
+      background: none; border: none; color: #64748b;
+      cursor: pointer; padding: 4px; display: flex;
+      align-items: center; transition: color 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .logout-btn:hover { color: #f87171; }
+    .logout-btn svg { width: 16px; height: 16px; }
+
     .section-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748b;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-size: 11px; font-weight: 600; color: #64748b;
+      margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;
     }
 
     .drop-zone {
       border: 2px dashed rgba(99,102,241,0.3);
-      border-radius: 16px;
-      padding: 40px 20px;
-      text-align: center;
-      cursor: pointer;
+      border-radius: 16px; padding: 40px 20px;
+      text-align: center; cursor: pointer;
       transition: all 0.25s;
       background: rgba(99,102,241,0.04);
       margin-bottom: 16px;
-      position: relative;
     }
 
     .drop-zone:hover, .drop-zone.dragover {
@@ -92,79 +121,60 @@
       transform: translateY(-2px);
     }
 
-    .drop-zone svg {
-      width: 40px;
-      height: 40px;
-      color: #6366f1;
-      margin-bottom: 12px;
-    }
-
-    .drop-zone p {
-      color: #94a3b8;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .drop-zone span {
-      color: #818cf8;
-      font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-
-    .drop-zone small {
-      display: block;
-      color: #475569;
-      font-size: 12px;
-      margin-top: 6px;
-    }
-
+    .drop-zone svg { width: 40px; height: 40px; color: #6366f1; margin-bottom: 12px; }
+    .drop-zone p { color: #94a3b8; font-size: 14px; line-height: 1.6; }
+    .drop-zone span { color: #818cf8; font-weight: 600; text-decoration: underline; }
+    .drop-zone small { display: block; color: #475569; font-size: 12px; margin-top: 6px; }
     #file-input { display: none; }
 
     .file-selected {
-      display: none;
-      align-items: center;
-      gap: 10px;
+      display: none; align-items: center; gap: 10px;
       background: rgba(99,102,241,0.1);
       border: 1px solid rgba(99,102,241,0.25);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
     }
 
     .file-selected svg { width: 18px; height: 18px; color: #818cf8; flex-shrink: 0; }
     .file-selected span { color: #c7d2fe; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    button {
-      width: 100%;
-      padding: 14px;
+    .btn {
+      width: 100%; padding: 14px;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
+      color: white; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
       transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
       font-family: 'Inter', sans-serif;
       box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+      margin-bottom: 10px;
     }
 
-    button svg { width: 18px; height: 18px; }
-    button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
-    button:disabled { background: linear-gradient(135deg, #334155, #475569); box-shadow: none; cursor: not-allowed; transform: none; }
+    .btn svg { width: 18px; height: 18px; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+    .btn:disabled { background: linear-gradient(135deg, #334155, #475569); box-shadow: none; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: rgba(14,165,233,0.1);
+      border: 1px solid rgba(14,165,233,0.25);
+      box-shadow: none; color: #38bdf8;
+    }
+
+    .btn-secondary:hover { background: rgba(14,165,233,0.2); box-shadow: none; }
+
+    .telegram-linked {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 12px; padding: 12px 16px;
+      color: #34d399; font-size: 13px; font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .telegram-linked svg { width: 16px; height: 16px; }
 
     .progress {
-      height: 3px;
-      background: rgba(255,255,255,0.06);
-      border-radius: 4px;
-      margin-top: 14px;
-      overflow: hidden;
-      display: none;
+      height: 3px; background: rgba(255,255,255,0.06);
+      border-radius: 4px; margin-top: 14px; overflow: hidden; display: none;
     }
 
     .progress-bar {
@@ -175,20 +185,12 @@
     }
 
     @keyframes progress-anim {
-      0%   { width: 5%; }
-      50%  { width: 75%; }
-      100% { width: 95%; }
+      0% { width: 5%; } 50% { width: 75%; } 100% { width: 95%; }
     }
 
     .status {
-      margin-top: 14px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 13px;
-      display: none;
-      align-items: center;
-      gap: 10px;
-      font-weight: 500;
+      margin-top: 14px; padding: 12px 16px; border-radius: 12px;
+      font-size: 13px; display: none; align-items: center; gap: 10px; font-weight: 500;
     }
 
     .status svg { width: 18px; height: 18px; flex-shrink: 0; }
@@ -196,77 +198,86 @@
     .status.error   { background: rgba(239,68,68,0.1);  color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
     .status.loading { background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
 
-    .divider {
-      border: none;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      margin: 28px 0;
-    }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 24px 0; }
 
     .info-card {
       background: rgba(14,165,233,0.06);
       border: 1px solid rgba(14,165,233,0.15);
-      border-radius: 14px;
-      padding: 18px;
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
+      border-radius: 14px; padding: 18px;
+      display: flex; gap: 14px; align-items: flex-start;
     }
 
     .info-card svg { width: 20px; height: 20px; color: #38bdf8; flex-shrink: 0; margin-top: 1px; }
+    .info-card div p { font-size: 13px; color: #7dd3fc; line-height: 1.7; }
+    .info-card div strong { color: #e0f2fe; display: block; margin-bottom: 4px; font-size: 13px; }
 
-    .info-card div p {
-      font-size: 13px;
-      color: #7dd3fc;
-      line-height: 1.7;
-    }
-
-    .info-card div strong {
-      color: #e0f2fe;
-      display: block;
-      margin-bottom: 4px;
-      font-size: 13px;
-    }
-
-    .steps {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 10px;
-    }
-
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: #7dd3fc;
-    }
-
+    .steps { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #7dd3fc; }
     .step-num {
-      width: 18px;
-      height: 18px;
-      background: rgba(14,165,233,0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: #38bdf8;
-      flex-shrink: 0;
+      width: 18px; height: 18px;
+      background: rgba(14,165,233,0.2); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #38bdf8; flex-shrink: 0;
+    }
+
+    .link-url-box {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 10px 14px;
+      color: #818cf8; font-size: 12px; word-break: break-all;
+      margin-top: 10px; display: none;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+<div class="container">
+  <div class="header">
+    <div class="logo-icon"><i data-lucide="bot"></i></div>
+    <h1>Telegram RAG</h1>
+  </div>
+  <p class="subtitle">Upload a document, ask questions via Telegram</p>
 
-    <div class="header">
-      <div class="logo-icon">
-        <i data-lucide="bot"></i>
+  <!-- Login Screen -->
+  <div id="login-screen">
+    <p>Sign in with your Google account to upload documents and use the bot.</p>
+    <a href="/auth/google" class="google-btn">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </a>
+  </div>
+
+  <!-- App Screen (shown after login) -->
+  <div id="app-screen">
+    <!-- User bar -->
+    <div class="user-bar">
+      <img id="user-avatar" class="user-avatar" src="" alt="avatar"/>
+      <div class="user-info">
+        <div class="user-name" id="user-name"></div>
+        <div class="user-email" id="user-email"></div>
       </div>
-      <h1>Telegram RAG</h1>
+      <button class="logout-btn" onclick="window.location.href='/auth/logout'">
+        <i data-lucide="log-out"></i>
+      </button>
     </div>
-    <p class="subtitle">Upload a document, ask questions via Telegram</p>
+
+    <!-- Telegram link status -->
+    <div id="telegram-linked" class="telegram-linked" style="display:none">
+      <i data-lucide="check-circle"></i>
+      Telegram account linked
+    </div>
+
+    <button class="btn btn-secondary" id="link-telegram-btn" onclick="linkTelegram()">
+      <i data-lucide="link"></i>
+      Link Telegram Account
+    </button>
+
+    <div class="link-url-box" id="link-url-box"></div>
+
+    <hr class="divider"/>
 
     <p class="section-label">Upload Document</p>
 
@@ -274,7 +285,7 @@
       <i data-lucide="file-up"></i>
       <p>Drag & drop your PDF here<br/>or <span>click to browse</span></p>
       <small>Supports PDF files only</small>
-      <input type="file" id="file-input" accept=".pdf" />
+      <input type="file" id="file-input" accept=".pdf"/>
     </div>
 
     <div class="file-selected" id="file-selected">
@@ -282,108 +293,128 @@
       <span id="file-name"></span>
     </div>
 
-    <button id="upload-btn" disabled>
+    <button class="btn" id="upload-btn" disabled>
       <i data-lucide="upload-cloud"></i>
       Upload & Process
     </button>
 
-    <div class="progress" id="progress">
-      <div class="progress-bar"></div>
-    </div>
-
+    <div class="progress" id="progress"><div class="progress-bar"></div></div>
     <div class="status" id="status"></div>
 
-    <hr class="divider" />
+    <hr class="divider"/>
 
     <div class="info-card">
       <i data-lucide="message-square"></i>
       <div>
         <strong>How to use</strong>
         <div class="steps">
-          <div class="step"><div class="step-num">1</div> Upload your PDF document above</div>
-          <div class="step"><div class="step-num">2</div> Open your Telegram bot</div>
-          <div class="step"><div class="step-num">3</div> Ask any question about the document</div>
-          <div class="step"><div class="step-num">4</div> Bot replies with an AI-generated answer</div>
+          <div class="step"><div class="step-num">1</div> Sign in with Google above</div>
+          <div class="step"><div class="step-num">2</div> Link your Telegram account</div>
+          <div class="step"><div class="step-num">3</div> Upload your PDF document</div>
+          <div class="step"><div class="step-num">4</div> Ask questions in Telegram bot</div>
         </div>
       </div>
     </div>
-
   </div>
+</div>
 
-  <script>
-    lucide.createIcons();
+<script>
+  lucide.createIcons();
 
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const uploadBtn = document.getElementById('upload-btn');
-    const fileNameEl = document.getElementById('file-name');
-    const fileSelected = document.getElementById('file-selected');
-    const statusEl = document.getElementById('status');
-    const progressEl = document.getElementById('progress');
-
-    let selectedFile = null;
-
-    dropZone.addEventListener('click', () => fileInput.click());
-
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file && file.type === 'application/pdf') setFile(file);
-    });
-
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files[0]) setFile(fileInput.files[0]);
-    });
-
-    function setFile(file) {
-      selectedFile = file;
-      fileNameEl.textContent = file.name;
-      fileSelected.style.display = 'flex';
-      uploadBtn.disabled = false;
-      statusEl.style.display = 'none';
-    }
-
-    uploadBtn.addEventListener('click', async () => {
-      if (!selectedFile) return;
-
-      uploadBtn.disabled = true;
-      progressEl.style.display = 'block';
-      showStatus('loading', 'loader', 'Processing document, please wait...');
-
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      try {
-        const res = await fetch('/upload', { method: 'POST', body: formData });
-        const text = await res.text();
-        progressEl.style.display = 'none';
-        if (res.ok) {
-          showStatus('success', 'check-circle', text);
-        } else {
-          showStatus('error', 'alert-circle', text);
-        }
-      } catch (err) {
-        progressEl.style.display = 'none';
-        showStatus('error', 'alert-circle', 'Upload failed. Is the server running?');
+  async function init() {
+    try {
+      const res = await fetch('/auth/me');
+      if (!res.ok) {
+        document.getElementById('login-screen').style.display = 'block';
+        document.getElementById('app-screen').style.display = 'none';
+        return;
       }
+      const user = await res.json();
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      document.getElementById('user-name').textContent = user.name;
+      document.getElementById('user-email').textContent = user.email;
+      document.getElementById('user-avatar').src = user.picture;
 
-      uploadBtn.disabled = false;
-    });
-
-    function showStatus(type, icon, message) {
-      statusEl.className = 'status ' + type;
-      statusEl.innerHTML = `<i data-lucide="${icon}"></i><span>${message}</span>`;
-      statusEl.style.display = 'flex';
-      lucide.createIcons();
+      if (user.telegramLinked) {
+        document.getElementById('telegram-linked').style.display = 'flex';
+        document.getElementById('link-telegram-btn').style.display = 'none';
+      }
+    } catch {
+      document.getElementById('login-screen').style.display = 'block';
     }
-  </script>
+  }
+
+  async function linkTelegram() {
+    const res = await fetch('/auth/link-telegram/generate', { method: 'POST' });
+    const data = await res.json();
+    const box = document.getElementById('link-url-box');
+    box.textContent = 'Send this link to your Telegram bot or open it: ' + data.linkUrl;
+    box.style.display = 'block';
+  }
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const uploadBtn = document.getElementById('upload-btn');
+  const fileNameEl = document.getElementById('file-name');
+  const fileSelected = document.getElementById('file-selected');
+  const statusEl = document.getElementById('status');
+  const progressEl = document.getElementById('progress');
+  let selectedFile = null;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') setFile(file);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+  function setFile(file) {
+    selectedFile = file;
+    fileNameEl.textContent = file.name;
+    fileSelected.style.display = 'flex';
+    uploadBtn.disabled = false;
+    statusEl.style.display = 'none';
+  }
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    uploadBtn.disabled = true;
+    progressEl.style.display = 'block';
+    showStatus('loading', 'loader', 'Processing document, please wait...');
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const res = await fetch('/upload', { method: 'POST', body: formData });
+      const text = await res.text();
+      progressEl.style.display = 'none';
+      if (res.ok) {
+        showStatus('success', 'check-circle', text);
+      } else if (res.status === 401) {
+        showStatus('error', 'alert-circle', 'Please sign in first.');
+      } else {
+        showStatus('error', 'alert-circle', text);
+      }
+    } catch (err) {
+      progressEl.style.display = 'none';
+      showStatus('error', 'alert-circle', 'Upload failed. Is the server running?');
+    }
+    uploadBtn.disabled = false;
+  });
+
+  function showStatus(type, icon, message) {
+    statusEl.className = 'status ' + type;
+    statusEl.innerHTML = `<i data-lucide="${icon}"></i><span>${message}</span>`;
+    statusEl.style.display = 'flex';
+    lucide.createIcons();
+  }
+
+  init();
+</script>
 </body>
 </html>
