@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Telegram RAG</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css"/>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 40px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+    }
+
+    .logo-icon svg { color: white; width: 24px; height: 24px; }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 32px;
+      margin-left: 62px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .drop-zone {
+      border: 2px dashed rgba(99,102,241,0.3);
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: rgba(99,102,241,0.04);
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #6366f1;
+      background: rgba(99,102,241,0.1);
+      transform: translateY(-2px);
+    }
+
+    .drop-zone svg {
+      width: 40px;
+      height: 40px;
+      color: #6366f1;
+      margin-bottom: 12px;
+    }
+
+    .drop-zone p {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .drop-zone span {
+      color: #818cf8;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .drop-zone small {
+      display: block;
+      color: #475569;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    #file-input { display: none; }
+
+    .file-selected {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+    }
+
+    .file-selected svg { width: 18px; height: 18px; color: #818cf8; flex-shrink: 0; }
+    .file-selected span { color: #c7d2fe; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+    }
+
+    button svg { width: 18px; height: 18px; }
+    button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+    button:disabled { background: linear-gradient(135deg, #334155, #475569); box-shadow: none; cursor: not-allowed; transform: none; }
+
+    .progress {
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      margin-top: 14px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #a78bfa);
+      border-radius: 4px;
+      animation: progress-anim 2s ease-in-out infinite;
+    }
+
+    @keyframes progress-anim {
+      0%   { width: 5%; }
+      50%  { width: 75%; }
+      100% { width: 95%; }
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+    }
+
+    .status svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .status.success { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+    .status.error   { background: rgba(239,68,68,0.1);  color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+    .status.loading { background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin: 28px 0;
+    }
+
+    .info-card {
+      background: rgba(14,165,233,0.06);
+      border: 1px solid rgba(14,165,233,0.15);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .info-card svg { width: 20px; height: 20px; color: #38bdf8; flex-shrink: 0; margin-top: 1px; }
+
+    .info-card div p {
+      font-size: 13px;
+      color: #7dd3fc;
+      line-height: 1.7;
+    }
+
+    .info-card div strong {
+      color: #e0f2fe;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #7dd3fc;
+    }
+
+    .step-num {
+      width: 18px;
+      height: 18px;
+      background: rgba(14,165,233,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #38bdf8;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <div class="logo-icon">
+        <i data-lucide="bot"></i>
+      </div>
+      <h1>Telegram RAG</h1>
+    </div>
+    <p class="subtitle">Upload a document, ask questions via Telegram</p>
+
+    <p class="section-label">Upload Document</p>
+
+    <div class="drop-zone" id="drop-zone">
+      <i data-lucide="file-up"></i>
+      <p>Drag & drop your PDF here<br/>or <span>click to browse</span></p>
+      <small>Supports PDF files only</small>
+      <input type="file" id="file-input" accept=".pdf" />
+    </div>
+
+    <div class="file-selected" id="file-selected">
+      <i data-lucide="file-text"></i>
+      <span id="file-name"></span>
+    </div>
+
+    <button id="upload-btn" disabled>
+      <i data-lucide="upload-cloud"></i>
+      Upload & Process
+    </button>
+
+    <div class="progress" id="progress">
+      <div class="progress-bar"></div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <hr class="divider" />
+
+    <div class="info-card">
+      <i data-lucide="message-square"></i>
+      <div>
+        <strong>How to use</strong>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div> Upload your PDF document above</div>
+          <div class="step"><div class="step-num">2</div> Open your Telegram bot</div>
+          <div class="step"><div class="step-num">3</div> Ask any question about the document</div>
+          <div class="step"><div class="step-num">4</div> Bot replies with an AI-generated answer</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileNameEl = document.getElementById('file-name');
+    const fileSelected = document.getElementById('file-selected');
+    const statusEl = document.getElementById('status');
+    const progressEl = document.getElementById('progress');
+
+    let selectedFile = null;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type === 'application/pdf') setFile(file);
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) setFile(fileInput.files[0]);
+    });
+
+    function setFile(file) {
+      selectedFile = file;
+      fileNameEl.textContent = file.name;
+      fileSelected.style.display = 'flex';
+      uploadBtn.disabled = false;
+      statusEl.style.display = 'none';
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      uploadBtn.disabled = true;
+      progressEl.style.display = 'block';
+      showStatus('loading', 'loader', 'Processing document, please wait...');
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const text = await res.text();
+        progressEl.style.display = 'none';
+        if (res.ok) {
+          showStatus('success', 'check-circle', text);
+        } else {
+          showStatus('error', 'alert-circle', text);
+        }
+      } catch (err) {
+        progressEl.style.display = 'none';
+        showStatus('error', 'alert-circle', 'Upload failed. Is the server running?');
+      }
+
+      uploadBtn.disabled = false;
+    });
+
+    function showStatus(type, icon, message) {
+      statusEl.className = 'status ' + type;
+      statusEl.innerHTML = `<i data-lucide="${icon}"></i><span>${message}</span>`;
+      statusEl.style.display = 'flex';
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
