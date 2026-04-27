@@ -331,13 +331,20 @@ async function generateAnswer(question, chunks, language = "english") {
   return response.data.choices[0].message.content;
 }
 
+let embedder = null;
+
+async function getEmbedder() {
+  if (!embedder) {
+    const { pipeline } = await import("@xenova/transformers");
+    embedder = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+  }
+  return embedder;
+}
+
 async function getEmbedding(text) {
-  const response = await axios.post(
-    "https://api-inference.huggingface.co/models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-    { inputs: text },
-    { headers: { Authorization: `Bearer ${process.env.HF_API_KEY}` } }
-  );
-  return response.data;
+  const extractor = await getEmbedder();
+  const output = await extractor(text, { pooling: "mean", normalize: true });
+  return Array.from(output.data);
 }
 
 // ─── Upload Route (protected) ─────────────────────────────────────────────────
@@ -379,4 +386,5 @@ app.get("/search", requireAuth, async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  getEmbedder().then(() => console.log("Embedder ready")).catch(console.error);
 });
