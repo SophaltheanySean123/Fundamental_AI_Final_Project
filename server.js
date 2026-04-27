@@ -290,30 +290,13 @@ function detectLanguage(text) {
   return "english";
 }
 
-let pdfjsCache = null;
-async function getPdfjs() {
-  if (!pdfjsCache) {
-    pdfjsCache = await import("pdfjs-dist");
-    pdfjsCache.GlobalWorkerOptions.workerSrc = "";
-  }
-  return pdfjsCache;
-}
+const { PDFParse } = require("pdf-parse");
 
 async function extractTextFromPDF(buffer) {
-  const pdfjsLib = await getPdfjs();
-  const loadingTask = pdfjsLib.getDocument({
-    data: new Uint8Array(buffer),
-    useSystemFonts: true,
-    verbosity: 0,
-  });
-  const pdf = await loadingTask.promise;
-  const pages = [];
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    pages.push(textContent.items.map((item) => item.str).join(" "));
-  }
-  return pages.join("\n");
+  const parser = new PDFParse({ data: buffer, verbosity: 0 });
+  await parser.load();
+  const result = await parser.getText();
+  return result.text || "";
 }
 
 function cosineSimilarity(a, b) {
