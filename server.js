@@ -1,7 +1,6 @@
 const express = require("express");
 const axios = require("axios");
 const multer = require("multer");
-const PDFParser = require("pdf2json");
 const FormData = require("form-data");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
@@ -193,6 +192,7 @@ app.post("/webhook", async (req, res) => {
   // Text message
   if (message.text) {
     userText = message.text;
+    userLanguage = detectLanguage(userText);
   }
 
   // Voice message
@@ -282,7 +282,38 @@ app.get("/link-telegram", requireAuth, async (req, res) => {
 
 // ─── Core Functions ───────────────────────────────────────────────────────────
 function chunkText(text) {
-  return text.match(/.{1,500}/gs);
+  return text.match(/.{1,500}/gs) || [];
+}
+
+function detectLanguage(text) {
+  if (/[ក-៿]/.test(text)) return "khmer";
+  return "english";
+}
+
+let pdfjsCache = null;
+async function getPdfjs() {
+  if (!pdfjsCache) {
+    pdfjsCache = await import("pdfjs-dist");
+    pdfjsCache.GlobalWorkerOptions.workerSrc = "";
+  }
+  return pdfjsCache;
+}
+
+async function extractTextFromPDF(buffer) {
+  const pdfjsLib = await getPdfjs();
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(buffer),
+    useSystemFonts: true,
+    verbosity: 0,
+  });
+  const pdf = await loadingTask.promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    pages.push(textContent.items.map((item) => item.str).join(" "));
+  }
+  return pages.join("\n");
 }
 
 function cosineSimilarity(a, b) {
@@ -322,7 +353,7 @@ let embedder = null;
 async function getEmbedder() {
   if (!embedder) {
     const { pipeline } = await import("@xenova/transformers");
-    embedder = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+    embedder = await pipeline("feature-extraction", "Xenova/paraphrase-multilingual-MiniLM-L12-v2");
   }
   return embedder;
 }
@@ -335,38 +366,28 @@ async function getEmbedding(text) {
 
 // ─── Upload Route (protected) ─────────────────────────────────────────────────
 app.post("/upload", requireAuth, upload.single("file"), async (req, res) => {
-  const parser = new PDFParser();
-
-  parser.on("pdfParser_dataReady", async (pdfData) => {
-    try {
-      const text = pdfData.Pages.map((page) =>
-        page.Texts.map((t) => decodeURIComponent(t.R[0].T)).join(" ")
-      ).join("\n");
-      const chunks = chunkText(text);
-      console.log(`Split into ${chunks.length} chunks, generating embeddings...`);
-
-      const store = [];
-      for (let i = 0; i < chunks.length; i++) {
-        const embedding = await getEmbedding(chunks[i]);
-        store.push({ text: chunks[i], embedding, userId: req.user._id });
-        console.log(`Chunk ${i + 1}/${chunks.length} saved`);
-      }
-
-      await Chunk.deleteMany({ userId: req.user._id });
-      await Chunk.insertMany(store);
-      res.send(`Done! Saved ${chunks.length} chunks.`);
-    } catch (err) {
-      console.error("Embedding error:", err.response?.data || err.message);
-      res.status(500).send("Failed: " + (err.response?.data?.error?.message || err.message));
+  try {
+    const text = await extractTextFromPDF(req.file.buffer);
+    if (!text.trim()) {
+      return res.status(400).send("No text could be extracted from this PDF. The file may use unsupported encoding.");
     }
-  });
+    const chunks = chunkText(text);
+    console.log(`Split into ${chunks.length} chunks, generating embeddings...`);
 
-  parser.on("pdfParser_dataError", (err) => {
-    console.error(err);
-    res.status(500).send("Failed to parse PDF");
-  });
+    const store = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const embedding = await getEmbedding(chunks[i]);
+      store.push({ text: chunks[i], embedding, userId: req.user._id });
+      console.log(`Chunk ${i + 1}/${chunks.length} saved`);
+    }
 
-  parser.parseBuffer(req.file.buffer);
+    await Chunk.deleteMany({ userId: req.user._id });
+    await Chunk.insertMany(store);
+    res.send(`Done! Saved ${chunks.length} chunks.`);
+  } catch (err) {
+    console.error("Upload error:", err.response?.data || err.message);
+    res.status(500).send("Failed: " + (err.response?.data?.error?.message || err.message));
+  }
 });
 
 // ─── Search Route (protected) ─────────────────────────────────────────────────
